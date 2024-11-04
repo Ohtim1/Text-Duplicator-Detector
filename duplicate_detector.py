@@ -71,7 +71,7 @@ app = tk.Tk()
 app.title("Duplicate Line Detector")
 
 # Set the window icon using the full path
-app.iconbitmap(r"C:\Users\Eagle Officer\Desktop\Text_Duplicate\icon.ico")  # Use 'r' for raw string
+app.iconbitmap(r"C:\Users\your_name\Desktop\Text_Duplicate\icon.ico")  # Use 'r' for raw string
 
 # Original Text Area
 label_original = tk.Label(app, text="Original Text:")

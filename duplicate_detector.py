@@ -1,116 +1,91 @@
-import tkinter as tk
-from tkinter import scrolledtext, simpledialog
+import sys
+from PyQt5 import QtWidgets, QtGui
+from collections import Counter
 
-def label_duplicates(event=None):
-    input_text = text_original.get("1.0", tk.END)  # Get all text from the original text box
-    lines = input_text.strip().splitlines()  # Split into lines
-    unique_lines = []
-    duplicates = []
-    line_count = {}
+class DuplicateLineDetector(QtWidgets.QMainWindow):
+    def __init__(self):
+        super(DuplicateLineDetector, self).__init__()
 
-    # Count occurrences of each line
-    for line in lines:
-        if line in line_count:
-            line_count[line] += 1
-            duplicates.append(line)  # Collect duplicates
+        # Set window title, icon, size, and position (centered at 1024x1024)
+        self.setWindowTitle("Duplicate Line Detector")
+        self.setWindowIcon(QtGui.QIcon(r"C:\Users\your_pc_name\Downloads\Text_Duplicate\icon.ico"))
+        self.resize(1024, 1024)
+        self.center()
+
+        # Set layout
+        self.central_widget = QtWidgets.QWidget(self)
+        self.setCentralWidget(self.central_widget)
+        self.layout = QtWidgets.QVBoxLayout(self.central_widget)
+
+        # Original Text Area
+        self.original_label = QtWidgets.QLabel("Original Text: 0 lines")
+        self.layout.addWidget(self.original_label)
+        self.text_original = QtWidgets.QPlainTextEdit(self)
+        self.layout.addWidget(self.text_original)
+
+        # Results Text Area
+        self.results_label = QtWidgets.QLabel("Results After Removing Duplicates: 0 lines")
+        self.layout.addWidget(self.results_label)
+        self.text_results = QtWidgets.QPlainTextEdit(self)
+        self.text_results.setReadOnly(True)
+        self.layout.addWidget(self.text_results)
+
+        # Buttons
+        self.remove_button = QtWidgets.QPushButton("Remove Duplicates", self)
+        self.clear_button = QtWidgets.QPushButton("Clear", self)
+        self.layout.addWidget(self.remove_button)
+        self.layout.addWidget(self.clear_button)
+
+        # Connect buttons to functions
+        self.remove_button.clicked.connect(self.remove_duplicates)
+        self.clear_button.clicked.connect(self.clear_text)
+
+        # Connect real-time update for line counts
+        self.text_original.textChanged.connect(self.update_counts)
+
+    def center(self):
+        """Center the window on the screen."""
+        frame_geometry = self.frameGeometry()
+        screen_center = QtWidgets.QApplication.desktop().screenGeometry().center()
+        frame_geometry.moveCenter(screen_center)
+        self.move(frame_geometry.topLeft())
+
+    def remove_duplicates(self):
+        """Removes duplicates and updates results with unique lines."""
+        input_text = self.text_original.toPlainText().strip()
+        lines = input_text.splitlines()
+
+        # Count occurrences and find duplicates
+        line_count = Counter(lines)
+        unique_lines = [line for line, count in line_count.items() if count == 1]
+
+        # Display results
+        if unique_lines:
+            self.text_results.setPlainText("\n".join(unique_lines))
         else:
-            line_count[line] = 1
-            unique_lines.append(line)  # Keep unique lines
+            self.text_results.setPlainText("No duplicates found.")
 
-    # Ask user for a custom label for duplicates if not already done
-    if not hasattr(label_duplicates, "duplicate_label"):
-        label_duplicates.duplicate_label = simpledialog.askstring("Custom Label", "Enter label for duplicates (default: [DUPLICATE]):")
-        if not label_duplicates.duplicate_label:  # If no input, use the default label
-            label_duplicates.duplicate_label = "[DUPLICATE]"
+        # Update line counts
+        self.update_counts()
 
-    # Clear previous duplicates
-    text_duplicates.delete("1.0", tk.END)
+    def clear_text(self):
+        """Clears both text areas and resets labels."""
+        self.text_original.clear()
+        self.text_results.clear()
+        self.update_counts()
 
-    # Display labeled duplicate lines in the duplicates text box
-    if duplicates:
-        labeled_duplicates = [f"{label_duplicates.duplicate_label} {line}" for line in set(duplicates)]
-        text_duplicates.insert(tk.END, "\n".join(labeled_duplicates))
-    else:
-        text_duplicates.insert(tk.END, "No duplicates found.")
+    def update_counts(self):
+        """Updates line counts in real-time as text is changed."""
+        input_text = self.text_original.toPlainText().strip()
+        lines = input_text.splitlines()
+        unique_lines = set(lines)
 
-    # Update original text area to show only unique lines
-    text_original.delete("1.0", tk.END)
-    text_original.insert(tk.END, "\n".join(unique_lines))
+        # Update labels with line counts
+        self.original_label.setText(f"Original Text: {len(lines)} lines")
+        self.results_label.setText(f"Results After Removing Duplicates: {len(unique_lines)} lines")
 
-    # Update line counts
-    original_count_label.config(text=f"Original Line Count: {len(unique_lines)}")
-    duplicate_count_label.config(text=f"Found Duplicate Line Count: {len(set(duplicates))}")
-
-def remove_duplicates():
-    # Get the current text from the duplicates box and remove it from the original text
-    duplicates_text = text_duplicates.get("1.0", tk.END).strip()  # Get all text from duplicates box
-    duplicates_lines = duplicates_text.splitlines()
-
-    # Get current text from original text box
-    original_text = text_original.get("1.0", tk.END).strip()
-    original_lines = original_text.splitlines()
-
-    # Remove duplicates from the original lines
-    new_original_lines = [line for line in original_lines if line not in duplicates_lines]
-
-    # Update the original text box
-    text_original.delete("1.0", tk.END)
-    text_original.insert(tk.END, "\n".join(new_original_lines))
-
-    # Update the original line count
-    original_count_label.config(text=f"Original Line Count: {len(new_original_lines)}")
-
-def clear_text():
-    text_original.delete("1.0", tk.END)  # Clear original text area
-    text_duplicates.delete("1.0", tk.END)  # Clear duplicates text area
-    original_count_label.config(text="Original Line Count: 0")  # Reset original line count
-    duplicate_count_label.config(text="Found Duplicate Line Count: 0")  # Reset duplicate line count
-
-# Set up the main application window
-app = tk.Tk()
-app.title("Duplicate Line Detector")
-
-# Set the window icon using the full path
-app.iconbitmap(r"C:\Users\your_name\Desktop\Text_Duplicate\icon.ico")  # Use 'r' for raw string
-
-# Original Text Area
-label_original = tk.Label(app, text="Original Text:")
-label_original.grid(row=0, column=0, sticky="w", padx=10, pady=(10, 0))  # Add some padding above
-text_original = scrolledtext.ScrolledText(app, wrap=tk.WORD)
-text_original.grid(row=1, column=0, sticky="nsew", padx=10, pady=5)
-
-# Duplicates Text Area
-label_duplicates = tk.Label(app, text="Found Duplicates:")
-label_duplicates.grid(row=2, column=0, sticky="w", padx=10, pady=(10, 0))  # Add some padding above
-text_duplicates = scrolledtext.ScrolledText(app, wrap=tk.WORD)
-text_duplicates.grid(row=3, column=0, sticky="nsew", padx=10, pady=5)
-
-# Line Count Labels
-original_count_label = tk.Label(app, text="Original Line Count: 0")
-original_count_label.grid(row=4, column=0, sticky="w", padx=10, pady=(5, 0))
-
-duplicate_count_label = tk.Label(app, text="Found Duplicate Line Count: 0")
-duplicate_count_label.grid(row=5, column=0, sticky="w", padx=10, pady=(5, 0))
-
-# Buttons Frame
-button_frame = tk.Frame(app)
-button_frame.grid(row=6, column=0, pady=10)
-
-# Remove Duplicates Button
-remove_button = tk.Button(button_frame, text="Remove Duplicates from Original", command=remove_duplicates)
-remove_button.pack(side=tk.LEFT, padx=5)
-
-# Clear Button
-clear_button = tk.Button(button_frame, text="Clear", command=clear_text)
-clear_button.pack(side=tk.LEFT, padx=5)
-
-# Bind the original text area to the label_duplicates function
-text_original.bind("<KeyRelease>", label_duplicates)
-
-# Configure grid to make the text areas expand with window resizing
-app.grid_rowconfigure(1, weight=1)  # Allow the original text area to expand
-app.grid_rowconfigure(3, weight=1)  # Allow the duplicates text area to expand
-app.grid_columnconfigure(0, weight=1)  # Allow the column to expand
-
-# Start the GUI event loop
-app.mainloop()
+if __name__ == "__main__":
+    app = QtWidgets.QApplication(sys.argv)
+    window = DuplicateLineDetector()
+    window.show()
+    sys.exit(app.exec_())

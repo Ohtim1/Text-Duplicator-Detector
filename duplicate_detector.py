@@ -70,6 +70,9 @@ def clear_text():
 app = tk.Tk()
 app.title("Duplicate Line Detector")
 
+# Set the window icon using the full path
+app.iconbitmap(r"C:\Users\Eagle Officer\Desktop\Text_Duplicate\icon.ico")  # Use 'r' for raw string
+
 # Original Text Area
 label_original = tk.Label(app, text="Original Text:")
 label_original.grid(row=0, column=0, sticky="w", padx=10, pady=(10, 0))  # Add some padding above
